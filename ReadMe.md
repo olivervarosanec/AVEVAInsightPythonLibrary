@@ -24,9 +24,11 @@ To retrieve process values, use the getInsightData method. It requires the tag n
 
 ```python
 df = aveva.getInsightData(tagnames=['Tag1', 'Tag2'], starttime=datetime(2023, 1, 1), endtime=datetime(2023, 1, 31))
-Get Expression Data
-To retrieve expression data, use the getExpressionData method. It requires an expression, start time, and end time.
 ```
+
+# Get Expression Data
+To retrieve expression data, use the getExpressionData method. It requires an expression, start time, and end time.
+
 ```python
 df = aveva.getExpressionData(expression='Tag1*Tag2', starttime=datetime(2023, 1, 1), endtime=datetime(2023, 1, 31))
 ```
