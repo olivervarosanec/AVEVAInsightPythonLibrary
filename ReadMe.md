@@ -40,5 +40,5 @@ df = aveva.getTagList(tagnames=['Tag1', 'Tag2'])
 Error Handling
 The library will raise a ValueError if the input to any of the methods is not as expected. For example, if you pass a string to the starttime parameter, the getInsightData method will raise a ValueError with the message "starttime must be a datetime object".
 
-#Further Development
+# Further Development
 We welcome contributions! If you found a bug or want to suggest an improvement, please open an issue. Pull requests are also welcome.
