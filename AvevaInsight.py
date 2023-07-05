@@ -1,17 +1,9 @@
 import requests
-import os
-import json
 import pandas as pd
-import numpy as np
 from pandas.tseries.offsets import DateOffset
-import urllib.parse
-import matplotlib.pyplot as plt
-import pickle
 from datetime import datetime, timedelta
-import csv
 
-
-class AvevaInsight:
+class Aveva_Insight:
     def __init__(self, token):
         self.token = token
         self.base_url = 'https://online.wonderware.eu'
@@ -19,7 +11,7 @@ class AvevaInsight:
             "Authorization": self.token,
             "Content-Type": "application/json"}
 
-        self.processValues_path = '/apis/historian/v2/ProcessValues'
+        self.process_values_path = '/apis/historian/v2/ProcessValues'
         self.tags_path = '/apis/Historian/V2/Tags'
         
     def format_time(self, time):
@@ -32,36 +24,39 @@ class AvevaInsight:
         except ValueError:
             return pd.to_datetime(dt_str, format="%Y-%m-%dT%H:%M:%SZ")
 
-    def api_call(self, method, url, params_or_payload, process_func):
+    def _api_request(self, method, url, data):
+        if method == 'get':
+            return requests.get(url, headers=self.headers, params=data)
+        elif method == 'post':
+            return requests.post(url, headers=self.headers, json=data)
+        else:
+            raise ValueError("Invalid method")
+
+    def api_call(self, method, url, data, process_func):
         df = pd.DataFrame()
         counter = 0
         while True:
             counter += 1
-            if method.lower() == "get":
-                response = requests.get(url, headers=self.headers, params=params_or_payload if counter <= 1 else None)
-            elif method.lower() == "post":
-                response = requests.post(url, headers=self.headers, json=params_or_payload if counter <= 1 else None)
-            else:
-                raise ValueError("Invalid method")
-
-            if response.status_code == 200:
-                df = pd.concat([df, pd.DataFrame(response.json()["value"])])
-                df = process_func(df)
-                
-                if '@odata.nextLink' in response.json():
-                    url = response.json()['@odata.nextLink']
-                    print(f"next: {counter}")
-                    continue
-                else:
-                    print(f"end: {counter}")
-                    break
-            else:
+            response = self._api_request(method, url, data if counter <= 1 else None)
+            
+            if response.status_code != 200:
                 print(f"Failed to retrieve data. Status code: {response.status_code}")
                 raise ValueError(f"Error from WEBAPI: {response.content}")
 
+            df = pd.concat([df, pd.DataFrame(response.json()["value"])])
+            df = process_func(df)
+
+            if '@odata.nextLink' in response.json():
+                url = response.json()['@odata.nextLink']
+                print(f"next: {counter}")
+            else:
+                print(f"end: {counter}")
+                break
+
         return df
-    
-    def getInsightData(self, tagnames, starttime, endtime, RetrievalMode="Delta"):
+
+
+    def get_Insight_Data(self, tagnames, starttime, endtime, RetrievalMode=None, Resolution=None):
         # Verify the input
         if not isinstance(starttime, datetime):
             raise ValueError("starttime must be a datetime object")
@@ -70,7 +65,7 @@ class AvevaInsight:
         if not isinstance(tagnames, (str, list)):
             raise ValueError("tagnames must be a string or a list of strings")
 
-        api_url = self.base_url + self.processValues_path
+        api_url = self.base_url + self.process_values_path
         starttime, endtime = self.format_time(starttime), self.format_time(endtime)
 
         if isinstance(tagnames, str):
@@ -83,11 +78,16 @@ class AvevaInsight:
             "RetrievalMode": RetrievalMode,
             "$filter": f"DateTime ge {starttime} and DateTime le {endtime}"
         }
+        if Resolution is not None:
+            params["Resolution"] = Resolution
+        if RetrievalMode is not None:
+            params["RetrievalMode"] = RetrievalMode
+
         df = self.api_call("get", api_url, params, lambda df: df.sort_values('DateTime', ascending=True))
 
         return df
 
-    def getExpressionData(self, expression, starttime, endtime, RetrievalMode="Delta"):
+    def get_Expression_Data(self, expression, starttime, endtime, RetrievalMode=None,  Resolution=None):
         # Verify the input
         if not isinstance(starttime, datetime):
             raise ValueError("starttime must be a datetime object")
@@ -96,7 +96,7 @@ class AvevaInsight:
         if not isinstance(expression, str):
             raise ValueError("expression must be a string")
 
-        api_url = self.base_url + self.processValues_path
+        api_url = self.base_url + self.process_values_path
         starttime, endtime = self.format_time(starttime), self.format_time(endtime)
 
         payload = {
@@ -107,11 +107,18 @@ class AvevaInsight:
             "select": "DateTime,FQN,OpcQuality,Value,Unit,InterpolationType",
             "expression": expression
         }
+
+        if Resolution is not None:
+            params["Resolution"] = Resolution
+        if RetrievalMode is not None:
+            params["RetrievalMode"] = RetrievalMode
+
+
         df = self.api_call("post", api_url, payload, lambda df: df.sort_values('DateTime', ascending=True))
 
         return df
 
-    def getTagList(self, tagnames=None):
+    def get_Tag_List(self, tagnames=None):
         # Verify the input
         if tagnames is not None and not isinstance(tagnames, (str, list)):
             raise ValueError("tagnames must be a string or a list of strings")

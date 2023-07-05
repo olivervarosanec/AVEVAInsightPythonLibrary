@@ -1,14 +1,7 @@
-AVEVA Insight Python Library
+#AVEVA Insight Python Library
 This is a Python library for interacting with the AVEVA Insight API. It allows Tech Support to troubleshoot data issues by providing easy-to-use methods for retrieving and processing data.
 
-Features
-Authenticate with AVEVA Insight API using an access token
-Retrieve process values from the historian
-Retrieve expressions from the historian
-Retrieve a list of available tags
-Dependencies
-The library depends on the following Python packages:
-
+#Requirements:
 requests
 os
 json
@@ -47,5 +40,5 @@ df = aveva.getTagList(tagnames=['Tag1', 'Tag2'])
 Error Handling
 The library will raise a ValueError if the input to any of the methods is not as expected. For example, if you pass a string to the starttime parameter, the getInsightData method will raise a ValueError with the message "starttime must be a datetime object".
 
-Further Development
+#Further Development
 We welcome contributions! If you found a bug or want to suggest an improvement, please open an issue. Pull requests are also welcome.
