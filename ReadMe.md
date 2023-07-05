@@ -1,7 +1,7 @@
-#AVEVA Insight Python Library
+# AVEVA Insight Python Library
 This is a Python library for interacting with the AVEVA Insight API. It allows Tech Support to troubleshoot data issues by providing easy-to-use methods for retrieving and processing data.
 
-#Requirements:
+# Requirements:
 requests
 os
 json
