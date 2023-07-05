@@ -23,14 +23,14 @@ aveva = AvevaInsight(token='YOUR_ACCESS_TOKEN')
 To retrieve process values, use the getInsightData method. It requires the tag names, start time, and end time.
 
 ```python
-df = aveva.getInsightData(tagnames=['Tag1', 'Tag2'], starttime=datetime(2023, 1, 1), endtime=datetime(2023, 1, 31))
+df = aveva.getInsightData(tagnames=['Tag1', 'Tag2'], starttime=datetime(2023, 1, 1), endtime=datetime(2023, 1, 31), RetrievalMode="Delta")
 ```
 
 # Get Expression Data
 To retrieve expression data, use the getExpressionData method. It requires an expression, start time, and end time.
 
 ```python
-df = aveva.getExpressionData(expression='Tag1*Tag2', starttime=datetime(2023, 1, 1), endtime=datetime(2023, 1, 31))
+df = aveva.getExpressionData(expression='Tag1*Tag2', starttime=datetime(2023, 1, 1), endtime=datetime(2023, 1, 31), RetrievalMode="Delta")
 ```
 
 # Get Tag List
