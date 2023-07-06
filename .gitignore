@@ -1,7 +1,9 @@
 .env
-/__pycache__/
-/.pytest_cache/
+*__pycache__/
+*.pytest_cache/
 /.vscode/
 *.csv
 *.json
+
+.vscode/settings.json
 
