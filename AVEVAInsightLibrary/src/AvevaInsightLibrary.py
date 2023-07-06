@@ -32,6 +32,14 @@ class Aveva_Insight:
         else:
             raise ValueError("Invalid method")
 
+    def save_to_file(self, df, filename, filetype="csv"):
+        if filetype.lower() == "csv":
+            df.to_csv(filename + '.csv', index=False)
+        elif filetype.lower() == "json":
+            df.to_json(filename + '.json', orient="records")
+        else:
+            raise ValueError("Invalid filetype. Use 'json' or 'csv'.")
+
     def api_call(self, method, url, data, process_func):
         df = pd.DataFrame()
         counter = 0
