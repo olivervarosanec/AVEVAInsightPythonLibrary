@@ -1,18 +1,6 @@
 # AVEVA Insight Python Library
-This is a Python library for interacting with the AVEVA Insight API. It allows Tech Support to troubleshoot data issues by providing easy-to-use methods for retrieving and processing data.
-
-# Requirements:
-requests
-os
-json
-pandas
-numpy
-matplotlib
-pickle
-csv
-datetime
-Usage
-First, you need to initialize an instance of the AvevaInsight class using your access token.
+This is a Python module designed to facilitate communication with the AVEVA Insight API. 
+It offers users the convenience of accessing data through user-friendly methods, transforming it into pandas dataframes for ease of processing and manipulation.
 
 ```python
 from aveva_insight import Aveva_Insight
