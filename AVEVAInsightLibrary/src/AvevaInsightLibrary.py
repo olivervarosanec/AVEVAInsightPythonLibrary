@@ -75,7 +75,6 @@ class Aveva_Insight:
 
         params = {
             "TagFilter": tag_filter,
-            "RetrievalMode": RetrievalMode,
             "$filter": f"DateTime ge {starttime} and DateTime le {endtime}"
         }
         if Resolution is not None:
@@ -103,7 +102,6 @@ class Aveva_Insight:
             "fqn": [],
             "startDateTime": starttime,
             "endDateTime": endtime,
-            "RetrievalMode": RetrievalMode,
             "select": "DateTime,FQN,OpcQuality,Value,Unit,InterpolationType",
             "expression": expression
         }
