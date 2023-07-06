@@ -1,6 +1,6 @@
 {
     "python.testing.pytestArgs": [
-        "."
+        "AVEVAInsightLibrary/tests"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
