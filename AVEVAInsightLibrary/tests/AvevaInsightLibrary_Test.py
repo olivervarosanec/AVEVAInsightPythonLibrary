@@ -81,3 +81,37 @@ def test_get_Tag_List(insight):
 
     assert result.shape[0] > 0, "getInsightData method is not returning any data"
     assert result.shape[1] > 6, "getInsightData method is not returning the expected number of columns"
+
+def test_save_to_file_csv():
+    df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
+    aveva_insight = Aveva_Insight("token")
+    filename = "test_csv"
+    aveva_insight.save_to_file(df, filename, filetype="csv")
+
+    assert os.path.exists(filename + ".csv") == True
+
+    df_loaded = pd.read_csv(filename + ".csv")
+    pd.testing.assert_frame_equal(df, df_loaded)
+
+    os.remove(filename + ".csv")  # clean up
+
+def test_save_to_file_json():
+    df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
+    aveva_insight = Aveva_Insight("token")
+    filename = "test_json"
+    aveva_insight.save_to_file(df, filename, filetype="json")
+
+    assert os.path.exists(filename + ".json") == True
+
+    df_loaded = pd.read_json(filename + ".json")
+    pd.testing.assert_frame_equal(df, df_loaded)
+
+    os.remove(filename + ".json")  # clean up
+
+def test_save_to_file_invalid_filetype():
+    df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
+    aveva_insight = Aveva_Insight("token")
+    filename = "test_invalid"
+
+    with pytest.raises(ValueError, match="Invalid filetype. Use 'json' or 'csv'."):
+        aveva_insight.save_to_file(df, filename, filetype="xml")
