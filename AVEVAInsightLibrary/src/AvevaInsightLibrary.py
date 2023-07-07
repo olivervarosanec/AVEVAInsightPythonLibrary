@@ -63,7 +63,6 @@ class Aveva_Insight:
 
         return df
 
-
     def get_Insight_Data(self, tagnames, starttime, endtime, RetrievalMode=None, Resolution=None):
         # Verify the input
         if not isinstance(starttime, datetime):
@@ -115,9 +114,9 @@ class Aveva_Insight:
         }
 
         if Resolution is not None:
-            params["Resolution"] = Resolution
+            payload["Resolution"] = Resolution
         if RetrievalMode is not None:
-            params["RetrievalMode"] = RetrievalMode
+            payload["RetrievalMode"] = RetrievalMode
 
 
         df = self.api_call("post", api_url, payload, lambda df: df.sort_values('DateTime', ascending=True))
