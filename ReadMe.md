@@ -2,6 +2,8 @@
 This is a Python module designed to facilitate communication with the AVEVA Insight API. 
 It offers users the convenience of accessing data through user-friendly methods, transforming it into pandas dataframes for ease of processing and manipulation.
 
+Python Version: > 3.8
+
 ```python
 from aveva_insight import Aveva_Insight
 aveva = Aveva_Insight(token='YOUR_ACCESS_TOKEN')
