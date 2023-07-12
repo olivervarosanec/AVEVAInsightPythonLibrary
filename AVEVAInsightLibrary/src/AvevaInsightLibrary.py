@@ -63,12 +63,19 @@ class Aveva_Insight:
 
         return df
 
-    def get_Insight_Data(self, tagnames, starttime, endtime, RetrievalMode=None, Resolution=None):
+    def get_Insight_Data(self, tagnames, starttime=None, endtime=None, relative_days=None, RetrievalMode=None, Resolution=None):
         # Verify the input
-        if not isinstance(starttime, datetime):
-            raise ValueError("starttime must be a datetime object")
-        if not isinstance(endtime, datetime):
-            raise ValueError("endtime must be a datetime object")
+        if relative_days is not None:
+            if not isinstance(relative_days, int):
+                raise ValueError("relative_days must be an integer")
+            endtime = datetime.now()
+            starttime = endtime - timedelta(days=relative_days)
+        else:
+            if not isinstance(starttime, datetime):
+                raise ValueError("starttime must be a datetime object")
+            if not isinstance(endtime, datetime):
+                raise ValueError("endtime must be a datetime object")
+
         if not isinstance(tagnames, (str, list)):
             raise ValueError("tagnames must be a string or a list of strings")
 
@@ -93,12 +100,19 @@ class Aveva_Insight:
 
         return df
 
-    def get_Expression_Data(self, expression, starttime, endtime, RetrievalMode=None,  Resolution=None):
+
+    def get_Expression_Data(self, expression, starttime=None, endtime=None, relative_days=None, RetrievalMode=None,  Resolution=None):
         # Verify the input
-        if not isinstance(starttime, datetime):
-            raise ValueError("starttime must be a datetime object")
-        if not isinstance(endtime, datetime):
-            raise ValueError("endtime must be a datetime object")
+        if relative_days is not None:
+            if not isinstance(relative_days, int):
+                raise ValueError("relative_days must be an integer")
+            endtime = datetime.now()
+            starttime = endtime - timedelta(days=relative_days)
+        else:
+            if not isinstance(starttime, datetime):
+                raise ValueError("starttime must be a datetime object")
+            if not isinstance(endtime, datetime):
+                raise ValueError("endtime must be a datetime object")
         if not isinstance(expression, str):
             raise ValueError("expression must be a string")
 
@@ -118,10 +132,10 @@ class Aveva_Insight:
         if RetrievalMode is not None:
             payload["RetrievalMode"] = RetrievalMode
 
-
         df = self.api_call("post", api_url, payload, lambda df: df.sort_values('DateTime', ascending=True))
 
         return df
+
 
     def get_Tag_List(self, tagnames=None):
         # Verify the input
