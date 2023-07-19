@@ -15,50 +15,65 @@ class Aveva_Insight:
         self.tags_path = '/apis/Historian/V2/Tags'
         
     def format_time(self, time):
-        time += timedelta(hours=8)
+        #time += timedelta(hours=8)
         return time.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def convert_datetime(self, dt_str):
         try:
             return pd.to_datetime(dt_str, format="%Y-%m-%dT%H:%M:%S.%fZ")
         except ValueError:
-            return pd.to_datetime(dt_str, format="%Y-%m-%dT%H:%M:%SZ")
+            try:
+                return pd.to_datetime(dt_str, format="%Y-%m-%dT%H:%M:%SZ")
+            except ValueError:
+                raise ValueError("Invalid datetime format")
 
-    def _api_request(self, method, url, data):
+    def _api_request(self, method, url, data=None, params=None):
         if method == 'get':
-            return requests.get(url, headers=self.headers, params=data)
+            return requests.get(url, headers=self.headers, params=params)
         elif method == 'post':
             return requests.post(url, headers=self.headers, json=data)
         else:
             raise ValueError("Invalid method")
 
     def save_to_file(self, df, filename, filetype="csv"):
+        df = df.dropna(subset=['DateTime'])
+        df['DateTime'] = pd.to_datetime(df['DateTime'], format="%Y-%m-%dT%H:%M:%S.%fZ", errors='coerce')
+        #df['DateTime'] = df['DateTime'].apply(lambda x: x.strftime("%Y-%m-%d|%H:%M:%S.%f") if pd.notnull(x) else None)
+
         if filetype.lower() == "csv":
-            df.to_csv(filename + '.csv', index=False)
+            # create the CSV file with the specified format
+            with open(filename + '.csv', 'w') as f:
+                f.write("ASSCII\n|\nAdmin|UTC|UTC|DEFAULT|DEFAULT\n")
+                for index, row in df.iterrows():
+                    last_string = row['FQN'].split('.')[-1]
+                    f.write(f"{last_string}|0|{row['DateTime']}|1|{row['Value']}|{row['OpcQuality']}\n")
         elif filetype.lower() == "json":
+            # export the DataFrame to a JSON file
             df.to_json(filename + '.json', orient="records")
         else:
             raise ValueError("Invalid filetype. Use 'json' or 'csv'.")
 
-    def api_call(self, method, url, data, process_func):
+    def api_call(self, method, url, params, data, process_func):
         df = pd.DataFrame()
         counter = 0
         while True:
             counter += 1
-            response = self._api_request(method, url, data if counter <= 1 else None)
+            response = self._api_request(method, url, params=params, data=data if counter == 1 else None)
             
             if response.status_code != 200:
                 print(f"Failed to retrieve data. Status code: {response.status_code}")
                 raise ValueError(f"Error from WEBAPI: {response.content}")
 
             df = pd.concat([df, pd.DataFrame(response.json()["value"])])
-            df = process_func(df)
+
+
+            if len(df) > 0:
+                df = process_func(df)
 
             if '@odata.nextLink' in response.json():
                 url = response.json()['@odata.nextLink']
                 print(f"next: {counter}")
             else:
-                print(f"end: {counter}")
                 break
 
         return df
@@ -131,6 +146,8 @@ class Aveva_Insight:
             payload["Resolution"] = Resolution
         if RetrievalMode is not None:
             payload["RetrievalMode"] = RetrievalMode
+
+        print(payload)
 
         df = self.api_call("post", api_url, payload, lambda df: df.sort_values('DateTime', ascending=True))
 
