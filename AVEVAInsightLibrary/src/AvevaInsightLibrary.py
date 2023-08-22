@@ -58,7 +58,7 @@ class Aveva_Insight:
         counter = 0
         while True:
             counter += 1
-            response = self._api_request(method, url, params=params if counter == 1 else None, data=data if counter == 1 else None)
+            response = self._api_request(method, url, params=params if counter == 1 else None, data=data)
             
             if response.status_code != 200:
                 print(f"Failed to retrieve data. Status code: {response.status_code}")
@@ -147,7 +147,7 @@ class Aveva_Insight:
         if RetrievalMode is not None:
             payload["RetrievalMode"] = RetrievalMode
 
-        print(payload)
+        #print(payload)
 
         df = self.api_call("post", api_url, data=payload, process_func=lambda df: df.sort_values('DateTime', ascending=True))
 
