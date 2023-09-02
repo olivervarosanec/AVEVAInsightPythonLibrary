@@ -6,4 +6,5 @@
 *.json
 _DEBUG_*
 .vscode/settings.json
+Konrad*.ipynb
 
