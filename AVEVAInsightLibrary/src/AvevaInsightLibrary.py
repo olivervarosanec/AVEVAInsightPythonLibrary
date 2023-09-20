@@ -43,7 +43,8 @@ class Aveva_Insight:
 
     def save_to_file(self, df, filename, filetype="csv"):
         df = df.dropna(subset=['DateTime'])
-        df['DateTime'] = pd.to_datetime(df['DateTime'], format="%Y-%m-%dT%H:%M:%S.%fZ", errors='coerce')
+        #df['DateTime'] = pd.to_datetime(df['DateTime'], format="%Y-%m-%dT%H:%M:%S.%fZ", format='mixed')
+        df['DateTime'] = pd.to_datetime(df['DateTime'], format='mixed')
         #df['DateTime'] = df['DateTime'].apply(lambda x: x.strftime("%Y-%m-%d|%H:%M:%S.%f") if pd.notnull(x) else None)
 
         if filetype.lower() == "csv":
@@ -89,7 +90,7 @@ class Aveva_Insight:
 
         return df
 
-    def get_Insight_Data(self, tagnames, starttime=None, endtime=None, relative_days=None, RetrievalMode=None, Resolution=None):
+    def get_Insight_Data(self, tagnames, starttime=None, endtime=None, relative_days=None, RetrievalMode=None, Resolution=None, InterpolationType=None):
         # Verify the input
         if relative_days is not None:
             if not isinstance(relative_days, int):
@@ -121,11 +122,13 @@ class Aveva_Insight:
             params["Resolution"] = Resolution
         if RetrievalMode is not None:
             params["RetrievalMode"] = RetrievalMode
+        if InterpolationType is not None:
+            params["InterpolationType"] = InterpolationType
 
         df = self.api_call("get", api_url, params=params, process_func=lambda df: df.sort_values('DateTime', ascending=True))
 
+        df['DateTime'] = pd.to_datetime(df['DateTime'], format='mixed')
         return df
-
 
     def get_Expression_Data(self, expression, starttime=None, endtime=None, relative_days=None, RetrievalMode=None,  Resolution=None):
         
@@ -163,6 +166,7 @@ class Aveva_Insight:
 
         df = self.api_call("post", api_url, data=payload, process_func=lambda df: df.sort_values('DateTime', ascending=True))
 
+        df['DateTime'] = pd.to_datetime(df['DateTime'], format='mixed')
         return df
 
     
@@ -183,7 +187,6 @@ class Aveva_Insight:
 
 
     def upload_Tag_Data(self, tagname, value):
-            # Verify the input
         if tagname is None or value is None:
             raise ValueError("tagname and value must be specified")
 
