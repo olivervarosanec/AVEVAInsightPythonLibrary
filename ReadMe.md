@@ -23,6 +23,13 @@ To retrieve expression data, use the get_Expression_Data method. It requires an 
 df = aveva.get_Expression_Data(expression='Tag1*Tag2', starttime=datetime(2023, 1, 1), endtime=datetime(2023, 1, 31), RetrievalMode="Delta")
 ```
 
+# Upload Tag Data
+To Upload a live Value with current Timestamp
+
+```python
+df = aveva.upload_Tag_Data((tagname= "Tag1", value = 1)
+```
+
 # Get Tag List
 To retrieve a list of available tags, use the get_Tag_List method. Optionally, you can filter the tags by name.
 
