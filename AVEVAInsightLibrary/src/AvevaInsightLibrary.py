@@ -12,13 +12,18 @@ class Aveva_Insight:
         self.datasource_token = datasource_token
 
         self.base_url = 'https://online.wonderware.eu'
+        #self.base_url = 'https://dev.insight.capdev-connect.aveva.com'
+        
         self.headers = {
             "Authorization": self.user_token,
             "Content-Type": "application/json"}
 
         self.process_values_path = '/apis/historian/v2/ProcessValues'
         self.tags_path = '/apis/Historian/V2/Tags'
+        self.asset_path = '/apis/cim/v3/entities/query?orderByValue=%40name&includePaths=true&orderByType=Property&orderByDirection=asc'
         self.data_source_path = '/apis/upload/datasource'
+        self.get_data_source_path = '/apis/DataSourceServices/DataSources'
+        self.get_data_source_token = '/apis/DataSourceServices/GetDataSourceAccessKey'
         
     def format_time(self, time):
         #time += timedelta(hours=8)
@@ -44,8 +49,8 @@ class Aveva_Insight:
     def save_to_file(self, df, filename, filetype="csv"):
         df = df.dropna(subset=['DateTime'])
         #df['DateTime'] = pd.to_datetime(df['DateTime'], format="%Y-%m-%dT%H:%M:%S.%fZ", format='mixed')
-        df['DateTime'] = pd.to_datetime(df['DateTime'], format='mixed')
-        #df['DateTime'] = df['DateTime'].apply(lambda x: x.strftime("%Y-%m-%d|%H:%M:%S.%f") if pd.notnull(x) else None)
+        #df['DateTime'] = pd.to_datetime(df['DateTime'], format='mixed')
+        df['DateTime'] = df['DateTime'].apply(lambda x: x.strftime("%Y-%m-%d|%H:%M:%S.%f") if pd.notnull(x) else None)
 
         if filetype.lower() == "csv":
             # create the CSV file with the specified format
@@ -68,7 +73,7 @@ class Aveva_Insight:
             response = self._api_request(method, url, params=params if counter == 1 else None, data=data)
             
             if response.status_code not in [200, 202]:
-                print(f"Failed to retrieve data. Status code: {response.status_code}")
+                print(f"Failed to retrieve data. Status code: {response.status_code} Reason: {response.reason}")
                 raise ValueError(f"Error from WEBAPI: {response.content}")
 
             response_data = response.json()
@@ -166,7 +171,10 @@ class Aveva_Insight:
 
         df = self.api_call("post", api_url, data=payload, process_func=lambda df: df.sort_values('DateTime', ascending=True))
 
-        df['DateTime'] = pd.to_datetime(df['DateTime'], format='mixed')
+        if 'DateTime' in df.columns:
+            df['DateTime'] = pd.to_datetime(df['DateTime'], format='mixed')
+        else:
+            df['DateTime'] = pd.to_datetime(df['DateTime'])
         return df
 
     
@@ -180,9 +188,23 @@ class Aveva_Insight:
                 "DateTime":timestamp,
                 tagname:value
             }
-        ]
-        }
+        ]}
 
+        return data   
+
+
+    def get_metadata_payload(self, tagname, Location, DataType, Description, EngUnit):
+
+        data = {
+            "metadata": [
+            {
+            "TagName":tagname,
+            "Location": Location,
+            "DataType":DataType,
+            "Description":Description,
+            "EngUnit":EngUnit
+        }]
+        }
         return data   
 
 
@@ -192,6 +214,21 @@ class Aveva_Insight:
 
         payload = self.get_data_payload(tagname, value)
         #print(payload)            
+
+        api_url = self.base_url + self.data_source_path
+        self.headers["Authorization"] = self.datasource_token
+        
+        df = self.api_call("post", api_url, data=payload)
+        
+        return df
+
+
+    def upload_Tag_Metadata(self, tagname, Location, DataType, Description, EngUnit):
+        if tagname is None or DataType is None or Description is None or EngUnit is None:
+            raise ValueError("tagname and value must be specified")
+
+        payload = self.get_metadata_payload(tagname, Location, DataType, Description, EngUnit)
+        print(payload)            
 
         api_url = self.base_url + self.data_source_path
         self.headers["Authorization"] = self.datasource_token
@@ -222,3 +259,70 @@ class Aveva_Insight:
         df = self.api_call("get", api_url, params, lambda df: df)
 
         return df
+    
+    def get_datasource_list(self):
+
+        api_url = self.base_url + self.get_data_source_path
+
+        df = self.api_call("get", api_url)
+
+        return df
+    
+    def get_datasource_token(self, datasourceID):
+
+        if datasourceID is None:
+            raise ValueError("datasourceID must be specified")
+        
+        api_url = self.base_url + self.get_data_source_token + f"?dataSourceId={datasourceID}"
+
+        df = self.api_call("get", api_url)
+
+        return df
+    
+
+    def get_asset_list(self, assetName=None, entityDefinition="a2560e20-fe5b-ee15-ed2b-39f79ccab75c"):
+        # Verify the input
+        if assetName is not None and not isinstance(assetName, (str, list)):
+            raise ValueError("assetName must be a string or a list of strings")
+
+        api_url = self.base_url + self.asset_path
+
+        # Construct the query JSON
+        query = {
+            "$and": [
+                {"@name": {"$contains": ""}},  # Placeholder for assetName
+                {"@EntityDefinitionID": {"$contains": entityDefinition}}
+            ]
+        }
+        # Update the query with the assetName
+        if isinstance(assetName, str):
+            query["$and"][0]["@name"]["$contains"] = assetName
+        elif isinstance(assetName, list):
+            query["$and"] = [{"@name": {"$contains": name}} for name in assetName] + [query["$and"][1]]
+
+        # Call the API
+        df = self.api_call("post", api_url, data=query)
+
+            # Initialize an empty list to store the parsed data
+        parsed_data = []
+
+        # Iterate over the items in the response
+        for item in df["items"]:
+            # Extract the required information
+            entity_id = item.get('entityId')
+            entity_definition_id = item.get('entityDefinitionId')
+            name = item.get('name', '')
+            # Assume you want the first path if there are multiple paths
+            paths = item.get('paths', [])
+            path = paths[0].get('path', '') if paths else '' 
+
+            # Append the extracted information as a dictionary to the list
+            parsed_data.append({
+                'entityId': entity_id,
+                'entityDefinitionId': entity_definition_id,
+                'path': path,
+                'name': name
+            })
+
+        # Convert the list of dictionaries to a pandas DataFrame and return
+        return pd.DataFrame(parsed_data)
