@@ -30,6 +30,10 @@ To Upload a live Value with current Timestamp
 df = aveva.upload_Tag_Data((tagname= "Tag1", value = 1)
 ```
 
+```python
+df = aveva.upload_Tag_Data((dataframe= pandasDataframe)
+```
+
 # Get Tag List
 To retrieve a list of available tags, use the get_Tag_List method. Optionally, you can filter the tags by name.
 
