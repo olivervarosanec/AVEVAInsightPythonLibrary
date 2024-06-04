@@ -178,33 +178,32 @@ class Aveva_Insight:
         return df
 
     
-    def get_data_payload(self, tagname, value):
-
+    def get_data_payload(self, tagname, value): 
         timestamp = datetime.now(pytz.timezone('America/Los_Angeles')).astimezone(pytz.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
-
         data = {
-            "data":[
-            {
-                "DateTime":timestamp,
-                tagname:value
-            }
-        ]}
-
-        return data   
+            "data": [
+                {
+                    "DateTime": timestamp,
+                    tagname: value
+                }
+            ]
+        }
+        return data
     
-    def get_data_payload_from_dataframe(dataframe):
+    def get_data_payload_from_dataframe(self, dataframe):
         data_list = []
 
-        for _, row in dataframe.iterrows():
-            timestamp = datetime.now(pytz.timezone('America/Los_Angeles')).astimezone(pytz.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
-            data_dict = {
-                "DateTime": timestamp,
-                row['TagName']: row['Value']
-            }
+        # Group the dataframe by DateTime and create a dictionary for each group
+        grouped = dataframe.groupby('DateTime')
+        for name, group in grouped:
+            timestamp = name.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+            data_dict = {"DateTime": timestamp}
+            for _, row in group.iterrows():
+                data_dict[row['TagName']] = row['Value']
             data_list.append(data_dict)
 
         data = {"data": data_list}
-        return json.dumps(data)
+        return data
 
 
     def get_metadata_payload(self, tagname, Location, DataType, Description, EngUnit):
@@ -225,7 +224,7 @@ class Aveva_Insight:
     def upload_Tag_Data(self, tagname=None, value=None, dataframe=None):
         if dataframe is not None:
             payload = self.get_data_payload_from_dataframe(dataframe)
-        elif tagname is not None and value is not None:
+        elif tagname is not None and value is not None and dataframe is None:
             payload = self.get_data_payload(tagname, value)
         else:
             raise ValueError("Either dataframe or both tagname and value must be specified")
@@ -233,7 +232,7 @@ class Aveva_Insight:
         api_url = self.base_url + self.data_source_path
         self.headers["Authorization"] = self.datasource_token
         
-        df = self.api_call("post", api_url, data=payload)
+        df = self.api_call("post", api_url, data=payload)  # Use 'json' parameter instead of 'data'
         
         return df
 
