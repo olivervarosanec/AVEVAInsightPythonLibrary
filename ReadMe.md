@@ -27,11 +27,11 @@ df = aveva.get_Expression_Data(expression='Tag1*Tag2', starttime=datetime(2023, 
 To Upload a live Value with current Timestamp
 
 ```python
-df = aveva.upload_Tag_Data((tagname= "Tag1", value = 1)
+df = aveva.upload_Tag_Data(tagname= "Tag1", value = 1)
 ```
 
 ```python
-df = aveva.upload_Tag_Data((dataframe= pandasDataframe)
+df = aveva.upload_Tag_Data(dataframe= pandasDataframe)
 ```
 
 # Get Tag List
