@@ -24,6 +24,13 @@ class Aveva_Insight:
         self.data_source_path = '/apis/upload/datasource'
         self.get_data_source_path = '/apis/DataSourceServices/DataSources'
         self.get_data_source_token = '/apis/DataSourceServices/GetDataSourceAccessKey'
+        self.get_groups_path = 'https://services.connect.aveva.com/uam/v2/groups'
+        self.get_users_path = 'https://services.connect.aveva.com/uam/v2/users'
+        self.get_role_path = 'https://services.connect.aveva.com/uam/v2/roles?includeAssignable=true&includeSolutionAssignable=true&includePolicyDocument=true&assigneeType=user'
+        self.create_user_path = 'https://services.connect.aveva.com/uam/v2/memberships'
+        self.create_groups_path = 'https://services.connect.aveva.com/uam/v2/groups'
+        self.assign_role_path = 'https://services.connect.aveva.com/uam/v2/roleAssignments'
+        self.assign_user_to_group_path = ''
         
     def format_time(self, time):
         #time += timedelta(hours=8)
@@ -40,9 +47,9 @@ class Aveva_Insight:
 
     def _api_request(self, method, url, data=None, params=None):
         if method == 'get':
-            return requests.get(url, headers=self.headers, params=params)
+            return requests.get(url, headers=self.headers, params=params, timeout=500)
         elif method == 'post':
-            return requests.post(url, headers=self.headers, json=data)
+            return requests.post(url, headers=self.headers, json=data, timeout=500)
         else:
             raise ValueError("Invalid method")
 
@@ -340,3 +347,132 @@ class Aveva_Insight:
 
         # Convert the list of dictionaries to a pandas DataFrame and return
         return pd.DataFrame(parsed_data)
+
+    def get_groups(self, name=None):
+        try:
+            # Construct the request URL
+            url = self.get_groups_path
+            if name:
+                url += f'?nameContains={name}'
+            
+            # Make the API request
+            response = self._api_request('get', url)
+
+            if response.status_code != 200:
+                print(f"Failed to retrieve groups. Status code: {response.status_code} Reason: {response.reason} - {response.text}")
+                return None
+            else:
+                return pd.DataFrame(response.json()['items'])
+        except Exception as e:
+            print(f"Failed to retrieve groups. Error: {e}")
+            return None
+        
+    def get_users(self, email=None):
+        try:
+            # Construct the request URL
+            url = self.get_users_path
+            if email:
+                url += f'?emailContains={email}&includeMembershipDetails=true'
+
+            # Make the API request
+            response = self._api_request('get', url)
+
+            if response.status_code != 200:
+                print(f"Failed to retrieve users. Status code: {response.status_code} Reason: {response.reason} - {response.text}")
+                return None
+            else:
+                return pd.DataFrame(response.json()['items'])
+        except Exception as e:
+            print(f"Failed to retrieve users. Error: {e}")
+            return None
+    
+    def get_roles(self):
+        try:
+            response = self._api_request('get', self.get_role_path)
+
+            if response.status_code != 200:
+                print(f"Failed to retrieve roles. Status code: {response.status_code} Reason: {response.reason} - {response.text}")
+                return None
+            else:
+                return pd.DataFrame(response.json()['items'])
+        except Exception as e:
+            print(f"Failed to retrieve roles. Error: {e}")
+            return None
+        
+    def create_user(self, email, connectID):
+        try:
+            data = {
+                "email": email,
+                "context": f"account|{connectID}",
+            }
+            response = self._api_request('post', self.create_user_path, data=data)
+
+            if response.status_code == 409:
+                raise Exception(f"User with email {email} already exists.")
+                return False
+            elif response.status_code == 201:
+                print(f"User {email} created successfully")
+                return True
+            else:
+                print(f"Failed to create user. Status code: {response.status_code} Reason: {response.reason} - {response.text}")
+                return False
+        except Exception as e:
+            print(f"Failed to create user. Error: {e}")
+            return False
+    
+    def create_group(self, name, description):
+        try:
+            data = {
+                "name": name,
+                "description": description,
+            }
+            response = self._api_request('post', self.create_groups_path, data=data)
+
+            if response.status_code != 201:
+                print(f"Failed to create group. Status code: {response.status_code} Reason: {response.reason} - {response.text}")
+                return False
+            else:
+                print(f"Group {name} created successfully")
+                return True
+        except Exception as e:
+            print(f"Failed to create group. Error: {e}")
+            return None
+        
+    def assign_role_to_group(self, context, groupID, roleID):
+        try:
+            data = {
+                "context": context,
+                "group": groupID,
+                "role": roleID,
+            }
+            response = self._api_request('post', self.assign_role_path, data=data)
+
+            if response.status_code != 201:
+                print(f"Failed to assign role. Status code: {response.status_code} Reason: {response.reason} - {response.text}")
+                return False
+            else:
+                print(f"Role {roleID} assigned to group {groupID} successfully")
+                return True
+        except Exception as e:
+            print(f"Failed to assign role. Error: {e}")
+            return None
+    
+    def assign_user_to_group(self, groupID, userID):
+        try:
+
+            self.assign_user_to_group_path = f"https://services.connect.aveva.com/uam/v2/groups/{groupID}/users"
+
+            data = {
+                "id": userID,
+            }
+            response = self._api_request('post', self.assign_user_to_group_path, data=data)
+
+            if response.status_code != 201:
+                print(f"Failed to assign user to group. Status code: {response.status_code} Reason: {response.reason} - {response.text}")
+                return False
+            else:
+                print(f"User {userID} assigned to group {groupID} successfully")
+                return True
+        except Exception as e:
+            print(f"Failed to assign user to group. Error: {e}")
+            return None
