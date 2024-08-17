@@ -60,8 +60,13 @@ df = aveva.get_Expression_Data(
 Send live data with current timestamp:
 
 ```python
-result = aveva.upload_Tag_Data(tagname="Tag1", value=1)
+df = aveva.upload_Tag_Data(tagname= "Tag1", value = 1)
 ```
+To Upload history values as Pandas Dataframe
+
+```python
+df = aveva.upload_Tag_Data(dataframe= pandasDataframe)
+
 
 Or upload multiple tags using a dataframe:
 
