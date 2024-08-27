@@ -10,12 +10,6 @@ Effortlessly retrieve and manipulate data using pandas dataframes!
 
 ## 🚀 Quick Start
 
-Install the library:
-
-```bash
-pip install aveva-insight-python
-```
-
 Initialize the client:
 
 ```python
